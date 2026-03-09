@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Arduino – Conceptos Básicos</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #00b4d8;
+    --teal-dark: #0077b6;
+    --green: #00f593;
+    --orange: #ff6b35;
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --card: #131c2e;
+    --border: #1e3a5f;
+    --text: #c9d6f0;
+    --muted: #5a7a9a;
+    --correct: #00f593;
+    --wrong: #ff4d6d;
+    --shadow-teal: 0 0 20px rgba(0,180,216,0.3);
+    --shadow-green: 0 0 20px rgba(0,245,147,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,180,216,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,216,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header { text-align: center; margin-bottom: 50px; }
+
+  .logo-chip {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--bg3); border: 1px solid var(--teal);
+    border-radius: 6px; padding: 8px 18px; margin-bottom: 20px;
+    box-shadow: var(--shadow-teal);
+    font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+    color: var(--teal); letter-spacing: 2px;
+  }
+  .logo-chip::before { content: '▶'; color: var(--green); animation: blink 1.4s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 900; line-height: 1.1;
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 12px; letter-spacing: -0.5px;
+  }
+  .subtitle { color: var(--muted); font-size: 0.95rem; font-weight: 300; letter-spacing: 1px; }
+  .circuit-deco {
+    display: flex; align-items: center; gap: 0; margin: 16px auto; width: fit-content;
+    opacity: 0.25; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+    color: var(--teal); letter-spacing: 1px;
+  }
+
+  /* ── PANTALLA DE INGRESO ── */
+  #screenStart {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px 36px;
+    animation: fadeSlide 0.5s ease;
+  }
+
+  .start-title {
+    font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700;
+    color: var(--teal); letter-spacing: 2px; margin-bottom: 28px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .start-title::before { content: ''; display: block; width: 32px; height: 2px; background: var(--teal); }
+
+  .field-group { margin-bottom: 20px; }
+
+  .field-group label {
+    display: block; font-size: 0.75rem; letter-spacing: 2px;
+    color: var(--muted); font-family: 'Share Tech Mono', monospace;
+    margin-bottom: 8px; text-transform: uppercase;
+  }
+
+  .field-group input {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 13px 16px; color: #e8f0ff;
+    font-family: 'Exo 2', sans-serif; font-size: 1rem;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field-group input:focus { border-color: var(--teal); box-shadow: var(--shadow-teal); }
+  .field-group input::placeholder { color: var(--muted); }
+
+  .field-group select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 13px 16px; color: #e8f0ff;
+    font-family: 'Exo 2', sans-serif; font-size: 1rem;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a7a9a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center;
+  }
+  .field-group select:focus { border-color: var(--teal); box-shadow: var(--shadow-teal); }
+  .field-group select option { background: var(--bg3); color: #e8f0ff; }
+  .field-group select.placeholder-selected { color: var(--muted); }
+
+  .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 480px) { .fields-row { grid-template-columns: 1fr; } }
+
+  .input-error { border-color: var(--wrong) !important; }
+  .error-msg { color: var(--wrong); font-size: 0.78rem; margin-top: 5px; display: none; }
+  .error-msg.show { display: block; }
+
+  .start-info {
+    background: rgba(0,180,216,0.06); border: 1px solid rgba(0,180,216,0.2);
+    border-radius: 8px; padding: 14px 16px; margin: 24px 0;
+    font-size: 0.85rem; color: var(--muted); line-height: 1.6;
+  }
+  .start-info strong { color: var(--teal); display: block; margin-bottom: 4px; font-size: 0.8rem; letter-spacing: 1px; }
+
+  /* ── ACCESO DENEGADO ── */
+  .domain-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(0,245,147,0.07); border: 1px solid rgba(0,245,147,0.25);
+    border-radius: 6px; padding: 6px 12px; margin-top: 6px;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; color: #7affcc;
+  }
+  .domain-badge::before { content: '🔒'; }
+
+  #screenBlocked {
+    display: none; background: var(--card); border: 1px solid var(--wrong);
+    border-radius: 16px; padding: 50px 36px; text-align: center;
+    box-shadow: 0 0 40px rgba(255,77,109,0.15); animation: fadeSlide 0.4s ease;
+  }
+  .blocked-icon { font-size: 3.5rem; margin-bottom: 20px; display: block; }
+  .blocked-title {
+    font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 900;
+    color: var(--wrong); letter-spacing: 2px; margin-bottom: 14px;
+  }
+  .blocked-msg { color: var(--muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 8px; }
+  .blocked-domain {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.8rem;
+    color: var(--teal); background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 16px; display: inline-block; margin: 12px 0 24px;
+  }
+  .btn-back {
+    font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 2px; color: var(--wrong); background: transparent;
+    border: 1px solid var(--wrong); border-radius: 8px; padding: 12px 28px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-back:hover { background: rgba(255,77,109,0.1); }
+
+  .btn-start {
+    width: 100%; font-family: 'Orbitron', sans-serif; font-size: 0.9rem;
+    font-weight: 700; letter-spacing: 2px; color: var(--bg);
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    border: none; border-radius: 8px; padding: 16px;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 30px rgba(0,245,147,0.3); margin-top: 4px;
+  }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 6px 35px rgba(0,245,147,0.5); }
+
+  /* ── QUIZ ── */
+  #screenQuiz { display: none; }
+
+  .student-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 14px; margin-bottom: 20px;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--teal);
+  }
+  .student-badge span { color: var(--text); font-weight: 600; }
+
+  .progress-bar-wrap {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 4px; height: 6px; margin-bottom: 6px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: linear-gradient(90deg, var(--teal), var(--green));
+    border-radius: 4px; transition: width 0.5s ease; box-shadow: 0 0 10px rgba(0,245,147,0.5);
+  }
+  .progress-label {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+    color: var(--muted); text-align: right; margin-bottom: 24px;
+  }
+
+  /* ── CARDS ── */
+  .q-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 30px; margin-bottom: 24px;
+    position: relative; transition: border-color 0.3s, box-shadow 0.3s;
+    animation: fadeSlide 0.4s ease both;
+  }
+  @keyframes fadeSlide { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .q-card:nth-child(1){animation-delay:.05s} .q-card:nth-child(2){animation-delay:.10s}
+  .q-card:nth-child(3){animation-delay:.15s} .q-card:nth-child(4){animation-delay:.20s}
+  .q-card:nth-child(5){animation-delay:.25s} .q-card:nth-child(6){animation-delay:.30s}
+  .q-card:nth-child(7){animation-delay:.35s} .q-card:nth-child(8){animation-delay:.40s}
+  .q-card:nth-child(9){animation-delay:.45s} .q-card:nth-child(10){animation-delay:.50s}
+
+  .q-card.answered-correct { border-color: var(--correct); box-shadow: 0 0 15px rgba(0,245,147,0.15); }
+  .q-card.answered-wrong   { border-color: var(--wrong);   box-shadow: 0 0 15px rgba(255,77,109,0.15); }
+
+  .q-number {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+    color: var(--teal); letter-spacing: 2px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .q-number::before { content:''; display:inline-block; width:28px; height:2px; background:var(--teal); border-radius:2px; }
+
+  .q-text { font-size: 1.05rem; font-weight: 600; line-height: 1.5; color: #e8f0ff; margin-bottom: 20px; }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    font-size: 0.92rem; color: var(--text); user-select: none;
+  }
+  .option:hover:not(.disabled) { border-color: var(--teal); background: rgba(0,180,216,0.08); transform: translateX(4px); }
+  .option.selected  { border-color: var(--teal); background: rgba(0,180,216,0.12); }
+  .option.correct   { border-color: var(--correct); background: rgba(0,245,147,0.1); color: var(--correct); }
+  .option.wrong     { border-color: var(--wrong);   background: rgba(255,77,109,0.1); color: var(--wrong); }
+  .option.disabled  { cursor: default; }
+
+  .opt-key {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+    width: 26px; height: 26px; border: 1px solid var(--border);
+    border-radius: 5px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--muted); transition: all 0.2s;
+  }
+  .option.correct .opt-key { border-color: var(--correct); color: var(--correct); }
+  .option.wrong   .opt-key { border-color: var(--wrong);   color: var(--wrong); }
+  .option.selected .opt-key{ border-color: var(--teal);    color: var(--teal); }
+
+  .feedback {
+    margin-top: 14px; padding: 10px 14px; border-radius: 6px;
+    font-size: 0.85rem; line-height: 1.5; display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct-fb { background: rgba(0,245,147,0.08); border: 1px solid rgba(0,245,147,0.3); color: #a8ffd8; }
+  .feedback.wrong-fb   { background: rgba(255,77,109,0.08); border: 1px solid rgba(255,77,109,0.3); color: #ffa5b5; }
+  .feedback strong { display: block; margin-bottom: 3px; }
+
+  .status-icon { position: absolute; top: 20px; right: 20px; font-size: 1.3rem; display: none; }
+  .q-card.answered-correct .status-icon { display: block; color: var(--correct); }
+  .q-card.answered-wrong   .status-icon { display: block; color: var(--wrong); }
+
+  /* ── BOTÓN VERIFICAR ── */
+  .submit-wrap { text-align: center; margin-top: 40px; }
+  .btn-submit {
+    font-family: 'Orbitron', sans-serif; font-size: 0.95rem; font-weight: 700;
+    letter-spacing: 2px; color: var(--bg);
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    border: none; border-radius: 8px; padding: 16px 48px;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    box-shadow: 0 0 30px rgba(0,245,147,0.35);
+  }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 35px rgba(0,245,147,0.5); }
+  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── RESULTADOS ── */
+  #results {
+    display: none; background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px 30px; text-align: center;
+    margin-top: 40px; animation: fadeSlide 0.5s ease;
+  }
+  #results.show { display: block; }
+
+  .score-ring {
+    width: 130px; height: 130px; border-radius: 50%;
+    background: conic-gradient(var(--green) 0deg, var(--green) var(--deg,0deg), var(--bg3) var(--deg,0deg));
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px; position: relative;
+  }
+  .score-ring::before { content:''; position:absolute; inset:12px; background:var(--card); border-radius:50%; }
+  .score-num { font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:900; color:var(--green); position:relative; z-index:1; }
+
+  .score-label { font-family:'Share Tech Mono',monospace; font-size:.75rem; letter-spacing:2px; color:var(--muted); margin-bottom:16px; }
+  .result-msg  { font-size:1.15rem; font-weight:600; margin-bottom:8px; color:#e8f0ff; }
+  .result-sub  { color:var(--muted); font-size:.9rem; margin-bottom:28px; }
+
+  /* Tabla detalle */
+  .detail-table-wrap { overflow-x: auto; margin: 20px 0 28px; border-radius: 8px; border: 1px solid var(--border); }
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .detail-table th {
+    background: var(--bg3); color: var(--teal); font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 1px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .detail-table td { padding: 9px 12px; border-bottom: 1px solid rgba(30,58,95,0.5); color: var(--text); text-align: left; }
+  .detail-table tr:last-child td { border-bottom: none; }
+  .detail-table tr:hover td { background: rgba(0,180,216,0.04); }
+  .badge-ok  { color: var(--correct); font-weight: 600; }
+  .badge-err { color: var(--wrong);   font-weight: 600; }
+
+  .btn-csv {
+    font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 2px; color: var(--bg);
+    background: linear-gradient(135deg, var(--green), #00d4a8);
+    border: none; border-radius: 8px; padding: 14px 36px;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: var(--shadow-green); margin-bottom: 14px;
+  }
+  .btn-csv:hover { transform: translateY(-2px); box-shadow: 0 6px 35px rgba(0,245,147,0.5); }
+
+  .btn-retry {
+    font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 2px; color: var(--teal); background: transparent;
+    border: 1px solid var(--teal); border-radius: 8px; padding: 12px 32px;
+    cursor: pointer; transition: all 0.2s; display: block; margin: 0 auto;
+  }
+  .btn-retry:hover { background: rgba(0,180,216,0.1); box-shadow: var(--shadow-teal); }
+
+  .csv-note { font-size: 0.75rem; color: var(--muted); margin-bottom: 20px; font-family: 'Share Tech Mono', monospace; }
+
+  @media (max-width: 500px) {
+    .q-card { padding: 20px 16px; }
+    h1 { font-size: 1.6rem; }
+    #screenStart { padding: 28px 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-chip">ARDUINO BASICS · EDU QUIZ</div>
+    <h1>Fundamentos de Arduino</h1>
+    <p class="subtitle">10 preguntas · autocorrectivo · con registro CSV</p>
+    <div class="circuit-deco">┤├──[≡]──┤├──[R]──┤├──[C]──●──GND</div>
+  </header>
+
+  <!-- ══ PANTALLA INICIO ══ -->
+  <div id="screenStart">
+    <div class="start-title">IDENTIFICACIÓN DEL ALUMNO</div>
+
+    <div class="field-group">
+      <label>Nombre</label>
+      <input type="text" id="inputNombre" placeholder="Ej: Juan" autocomplete="off" />
+      <div class="error-msg" id="errNombre">Por favor ingresá tu nombre.</div>
+    </div>
+
+    <div class="field-group">
+      <label>Apellido</label>
+      <input type="text" id="inputApellido" placeholder="Ej: García" autocomplete="off" />
+      <div class="error-msg" id="errApellido">Por favor ingresá tu apellido.</div>
+    </div>
+
+    <div class="field-group">
+      <label>Correo institucional</label>
+      <input type="email" id="inputEmail" placeholder="usuario@escuelalosandes.edu.ar" autocomplete="off" />
+      <div class="error-msg" id="errEmail">Ingresá tu correo institucional.</div>
+      <div class="domain-badge">Solo se acepta el dominio escuelalosandes.edu.ar</div>
+    </div>
+
+    <div class="fields-row">
+      <div class="field-group">
+        <label>Curso</label>
+        <select id="inputCurso" class="placeholder-selected" onchange="this.classList.remove('placeholder-selected')">
+          <option value="" disabled selected>Seleccioná tu curso</option>
+          <option value="1ro">1ro</option>
+          <option value="2do">2do</option>
+          <option value="3ro">3ro</option>
+          <option value="4to">4to</option>
+          <option value="5to">5to</option>
+        </select>
+        <div class="error-msg" id="errCurso">Seleccioná tu curso.</div>
+      </div>
+      <div class="field-group">
+        <label>División</label>
+        <select id="inputDivision" class="placeholder-selected" onchange="this.classList.remove('placeholder-selected')">
+          <option value="" disabled selected>Seleccioná tu división</option>
+          <option value="1ra">1ra</option>
+          <option value="2da">2da</option>
+        </select>
+        <div class="error-msg" id="errDivision">Seleccioná tu división.</div>
+      </div>
+    </div>
+
+    <div class="start-info">
+      <strong>ℹ INFORMACIÓN</strong>
+      Necesitás un correo <strong>@escuelalosandes.edu.ar</strong> para acceder. Al finalizar podrás descargar un archivo <strong>CSV</strong> con tu nombre, fecha, puntaje y el detalle de cada respuesta.
+    </div>
+
+    <button class="btn-start" onclick="startQuiz()">COMENZAR QUIZ →</button>
+  </div>
+
+  <!-- ══ PANTALLA ACCESO DENEGADO ══ -->
+  <div id="screenBlocked">
+    <span class="blocked-icon">🚫</span>
+    <div class="blocked-title">ACCESO DENEGADO</div>
+    <p class="blocked-msg">Este formulario es exclusivo para alumnos de la<br><strong style="color:#e8f0ff">Escuela Los Andes</strong>.</p>
+    <p class="blocked-msg">Solo se permiten correos con el dominio:</p>
+    <div class="blocked-domain">@escuelalosandes.edu.ar</div>
+    <p class="blocked-msg" style="font-size:0.82rem">Si creés que es un error, contactá a tu docente.</p>
+    <br>
+    <button class="btn-back" onclick="goBack()">← VOLVER E INTENTAR CON OTRO CORREO</button>
+  </div>
+
+  <!-- ══ PANTALLA QUIZ ══ -->
+  <div id="screenQuiz">
+    <div id="studentBadge" class="student-badge">👤 Alumno: <span id="badgeName"></span></div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">0 / 10 respondidas</div>
+
+    <div id="quizForm"></div>
+
+    <div class="submit-wrap">
+      <button class="btn-submit" id="btnSubmit" disabled onclick="submitQuiz()">
+        VERIFICAR RESPUESTAS
+      </button>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    q: "¿Cuál es la función del pin GND en Arduino?",
+    opts: ["Suministrar 5V de alimentación","Servir como referencia de tierra (0V) del circuito","Transmitir datos en serie","Controlar la velocidad del clock"],
+    correct: 1,
+    explanation: "GND (Ground) es la referencia de 0 voltios del circuito. Todo componente necesita un retorno de corriente hacia GND para que el circuito esté completo."
+  },
+  {
+    q: "¿Qué hace la función <code>pinMode(pin, OUTPUT)</code> en Arduino?",
+    opts: ["Lee el valor analógico de un pin","Configura un pin para recibir datos por I2C","Configura un pin digital como salida para controlar componentes","Inicializa la comunicación serie"],
+    correct: 2,
+    explanation: "pinMode() configura el comportamiento de un pin. Con OUTPUT, el pin puede enviar señales eléctricas para controlar LEDs, motores, etc."
+  },
+  {
+    q: "¿Cuál es el rango de valores que devuelve <code>analogRead()</code> en un Arduino Uno?",
+    opts: ["0 a 255","0 a 1023","0 a 4095","0 a 5"],
+    correct: 1,
+    explanation: "Arduino Uno tiene un ADC de 10 bits, lo que da 2¹⁰ = 1024 valores posibles: de 0 (0V) a 1023 (5V)."
+  },
+  {
+    q: "¿Para qué sirve la función <code>delay(1000)</code>?",
+    opts: ["Esperar 1 microsegundo","Repetir una acción 1000 veces","Pausar la ejecución del programa por 1 segundo","Configurar el baud rate de la comunicación serie"],
+    correct: 2,
+    explanation: "delay() detiene la ejecución del sketch durante el tiempo indicado en milisegundos. delay(1000) = 1 segundo."
+  },
+  {
+    q: "¿Qué es un PWM en Arduino y para qué se usa?",
+    opts: ["Un protocolo de comunicación inalámbrica","Una señal digital que simula salida analógica variando el ciclo de trabajo","Un tipo especial de resistencia variable","Una función para leer temperatura"],
+    correct: 1,
+    explanation: "PWM (Pulse Width Modulation) varía el ancho de un pulso digital para simular valores intermedios de voltaje. Se usa para controlar brillo de LEDs y velocidad de motores."
+  },
+  {
+    q: "¿Cuál es la estructura mínima obligatoria de un sketch de Arduino?",
+    opts: ["Solo la función main()","Las funciones setup() y loop()","Las funciones init() y run()","Solo la función loop()"],
+    correct: 1,
+    explanation: "Todo sketch requiere: setup() que se ejecuta una sola vez al iniciar y loop() que se repite indefinidamente."
+  },
+  {
+    q: "¿Cuántos pines de entrada/salida digitales tiene el Arduino Uno?",
+    opts: ["6 pines digitales","10 pines digitales","14 pines digitales (D0–D13)","20 pines digitales"],
+    correct: 2,
+    explanation: "El Arduino Uno tiene 14 pines digitales (D0 a D13). De estos, 6 son capaces de PWM (~3, ~5, ~6, ~9, ~10, ~11)."
+  },
+  {
+    q: "¿Qué resistencia se recomienda usar en serie con un LED conectado a un pin de Arduino?",
+    opts: ["No hace falta resistencia, Arduino la regula internamente","Una resistencia de entre 220Ω y 1kΩ para limitar la corriente","Una resistencia de 1MΩ para proteger el LED","Un condensador de 100µF en lugar de resistencia"],
+    correct: 1,
+    explanation: "Sin resistencia, el LED podría quemarse o dañar el pin de Arduino (máx. ~40mA por pin). Se usan típicamente 220Ω–330Ω para un funcionamiento seguro."
+  },
+  {
+    q: "¿Qué es el Monitor Serie en el IDE de Arduino?",
+    opts: ["Un programa externo para visualizar circuitos","Una herramienta que muestra y envía datos entre la PC y Arduino por puerto USB/serie","Un componente de hardware que mide voltaje","El visor de errores de compilación"],
+    correct: 1,
+    explanation: "El Monitor Serie (Serial.begin() + Serial.println()) permite comunicación bidireccional entre Arduino y la PC. Es esencial para depurar programas."
+  },
+  {
+    q: "¿Cuál de las siguientes afirmaciones sobre los pines analógicos A0–A5 del Arduino Uno es CORRECTA?",
+    opts: ["Solo pueden usarse para leer señales analógicas, nunca como digitales","Pueden funcionar como entradas analógicas (analogRead) o como pines digitales (14–19)","Entregan una salida de voltaje variable automáticamente","Son pines exclusivos para comunicación I2C y SPI"],
+    correct: 1,
+    explanation: "Los pines A0–A5 son principalmente para analogRead(), pero también pueden usarse como pines digitales D14–D19 con pinMode()."
+  }
+];
+
+const KEYS = ['A','B','C','D'];
+let answered = new Array(questions.length).fill(null);
+let submitted = false;
+let studentName  = '';
+let studentEmail = '';
+let studentCurso    = '';
+let studentDivision = '';
+let startTime = null;
+
+const ALLOWED_DOMAIN = 'escuelalosandes.edu.ar';
+
+// ── INICIO ──
+function startQuiz() {
+  const nombre   = document.getElementById('inputNombre').value.trim();
+  const apellido = document.getElementById('inputApellido').value.trim();
+  const email    = document.getElementById('inputEmail').value.trim().toLowerCase();
+  const curso    = document.getElementById('inputCurso').value;
+  const division = document.getElementById('inputDivision').value;
+  let valid = true;
+
+  // Validar nombre
+  if (!nombre) {
+    document.getElementById('errNombre').classList.add('show');
+    document.getElementById('inputNombre').classList.add('input-error');
+    valid = false;
+  } else {
+    document.getElementById('errNombre').classList.remove('show');
+    document.getElementById('inputNombre').classList.remove('input-error');
+  }
+
+  // Validar apellido
+  if (!apellido) {
+    document.getElementById('errApellido').classList.add('show');
+    document.getElementById('inputApellido').classList.add('input-error');
+    valid = false;
+  } else {
+    document.getElementById('errApellido').classList.remove('show');
+    document.getElementById('inputApellido').classList.remove('input-error');
+  }
+
+  // Validar email: formato básico + dominio exacto
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const domainOk   = email.endsWith('@' + ALLOWED_DOMAIN);
+  if (!email || !emailRegex.test(email)) {
+    document.getElementById('errEmail').textContent = 'Ingresá un correo electrónico válido.';
+    document.getElementById('errEmail').classList.add('show');
+    document.getElementById('inputEmail').classList.add('input-error');
+    valid = false;
+  } else if (!domainOk) {
+    document.getElementById('screenStart').style.display   = 'none';
+    document.getElementById('screenBlocked').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  } else {
+    document.getElementById('errEmail').classList.remove('show');
+    document.getElementById('inputEmail').classList.remove('input-error');
+  }
+
+  // Validar curso
+  if (!curso) {
+    document.getElementById('errCurso').classList.add('show');
+    document.getElementById('inputCurso').classList.add('input-error');
+    valid = false;
+  } else {
+    document.getElementById('errCurso').classList.remove('show');
+    document.getElementById('inputCurso').classList.remove('input-error');
+  }
+
+  // Validar división
+  if (!division) {
+    document.getElementById('errDivision').classList.add('show');
+    document.getElementById('inputDivision').classList.add('input-error');
+    valid = false;
+  } else {
+    document.getElementById('errDivision').classList.remove('show');
+    document.getElementById('inputDivision').classList.remove('input-error');
+  }
+
+  if (!valid) return;
+
+  studentName     = `${nombre} ${apellido}`;
+  studentEmail    = email;
+  studentCurso    = curso;
+  studentDivision = division;
+  startTime = new Date();
+
+  document.getElementById('screenStart').style.display = 'none';
+  document.getElementById('screenQuiz').style.display  = 'block';
+  document.getElementById('badgeName').textContent = `${studentName} · ${curso} ${division} · ${email}`;
+
+  buildQuiz();
+}
+
+function goBack() {
+  document.getElementById('screenBlocked').style.display = 'none';
+  document.getElementById('screenStart').style.display   = 'block';
+  document.getElementById('inputEmail').value = '';
+  document.getElementById('inputEmail').classList.remove('input-error');
+  document.getElementById('errEmail').classList.remove('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── CONSTRUIR QUIZ ──
+function buildQuiz() {
+  const form = document.getElementById('quizForm');
+  form.innerHTML = '';
+  questions.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.id = `card-${qi}`;
+    card.innerHTML = `
+      <span class="status-icon" id="icon-${qi}">●</span>
+      <div class="q-number">PREGUNTA ${String(qi+1).padStart(2,'0')}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options" id="opts-${qi}">
+        ${q.opts.map((opt,oi) => `
+          <div class="option" id="opt-${qi}-${oi}" onclick="selectOption(${qi},${oi})">
+            <span class="opt-key">${KEYS[oi]}</span>
+            <span>${opt}</span>
+          </div>`).join('')}
+      </div>
+      <div class="feedback" id="fb-${qi}"></div>`;
+    form.appendChild(card);
+  });
+}
+
+function selectOption(qi, oi) {
+  if (submitted) return;
+  if (answered[qi] !== null)
+    document.getElementById(`opt-${qi}-${answered[qi]}`).classList.remove('selected');
+  answered[qi] = oi;
+  document.getElementById(`opt-${qi}-${oi}`).classList.add('selected');
+  updateProgress();
+  document.getElementById('btnSubmit').disabled = !answered.every(a => a !== null);
+}
+
+function updateProgress() {
+  const count = answered.filter(a => a !== null).length;
+  document.getElementById('progressBar').style.width = (count/questions.length*100) + '%';
+  document.getElementById('progressLabel').textContent = `${count} / ${questions.length} respondidas`;
+}
+
+// ── CORREGIR ──
+function submitQuiz() {
+  if (submitted) return;
+  submitted = true;
+  document.getElementById('btnSubmit').disabled = true;
+
+  let score = 0;
+  questions.forEach((q, qi) => {
+    const userAns = answered[qi];
+    const isCorrect = userAns === q.correct;
+    if (isCorrect) score++;
+
+    const card = document.getElementById(`card-${qi}`);
+    const icon = document.getElementById(`icon-${qi}`);
+    const fb   = document.getElementById(`fb-${qi}`);
+
+    for (let oi = 0; oi < q.opts.length; oi++)
+      document.getElementById(`opt-${qi}-${oi}`).classList.add('disabled');
+
+    if (isCorrect) {
+      card.classList.add('answered-correct');
+      icon.textContent = '✓';
+      document.getElementById(`opt-${qi}-${userAns}`).classList.replace('selected','correct');
+      fb.className = 'feedback show correct-fb';
+      fb.innerHTML = `<strong>✓ ¡Correcto!</strong>${q.explanation}`;
+    } else {
+      card.classList.add('answered-wrong');
+      icon.textContent = '✗';
+      document.getElementById(`opt-${qi}-${userAns}`).classList.replace('selected','wrong');
+      document.getElementById(`opt-${qi}-${q.correct}`).classList.add('correct');
+      fb.className = 'feedback show wrong-fb';
+      fb.innerHTML = `<strong>✗ Incorrecto. La respuesta correcta es: ${KEYS[q.correct]}.</strong>${q.explanation}`;
+    }
+  });
+
+  showResults(score);
+}
+
+// ── RESULTADOS ──
+function showResults(score) {
+  const pct = score / questions.length;
+  const deg = Math.round(pct * 360);
+  let msg, sub;
+  if (score===10)    { msg="🏆 ¡Perfecto! Dominio total de Arduino.";  sub="Sos un experto en electrónica y programación embebida."; }
+  else if(score>=8)  { msg="⚡ ¡Excelente trabajo!";                    sub="Tenés una sólida base en Arduino. Revisá los errores para cerrar los detalles."; }
+  else if(score>=6)  { msg="🔧 Buen progreso.";                         sub="Entendés los conceptos principales. Seguí practicando con proyectos reales."; }
+  else if(score>=4)  { msg="📚 Hay margen de mejora.";                  sub="Repasá los temas que fallaste y volvé a intentarlo."; }
+  else               { msg="💡 Seguí aprendiendo.";                     sub="Arduino tiene muchos conceptos clave. ¡La práctica hace al maestro!"; }
+
+  // tabla detalle
+  const rows = questions.map((q,qi) => {
+    const ok = answered[qi] === q.correct;
+    const qText = q.q.replace(/<[^>]+>/g,'');
+    const userOptText = q.opts[answered[qi]];
+    const corrOptText = q.opts[q.correct];
+    return `<tr>
+      <td>${qi+1}</td>
+      <td style="max-width:260px">${qText}</td>
+      <td>${KEYS[answered[qi]]} – ${userOptText}</td>
+      <td>${KEYS[q.correct]} – ${corrOptText}</td>
+      <td class="${ok?'badge-ok':'badge-err'}">${ok?'✓ Correcto':'✗ Incorrecto'}</td>
+    </tr>`;
+  }).join('');
+
+  const endTime = new Date();
+  const fechaStr = endTime.toLocaleDateString('es-AR');
+  const horaStr  = endTime.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = `
+    <div class="score-ring" style="--deg:${deg}deg">
+      <div class="score-num">${score}/10</div>
+    </div>
+    <div class="score-label">PUNTAJE FINAL · ${studentName}</div>
+    <div class="result-msg">${msg}</div>
+    <div class="result-sub">${sub}</div>
+
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead>
+          <tr><th>#</th><th>PREGUNTA</th><th>TU RESPUESTA</th><th>CORRECTA</th><th>RESULTADO</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <button class="btn-csv" onclick="downloadCSV()">⬇ DESCARGAR RESULTADOS CSV</button>
+    <div class="csv-note">El archivo puede abrirse en Excel, Google Sheets o LibreOffice Calc.</div>
+    <button class="btn-retry" onclick="retryQuiz()">↺ VOLVER A INTENTAR</button>
+  `;
+  resultsEl.classList.add('show');
+  resultsEl.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ── GENERAR CSV ──
+function downloadCSV() {
+  const now = new Date();
+  const fecha = now.toLocaleDateString('es-AR');
+  const hora  = now.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+  const score = answered.filter((a,i) => a === questions[i].correct).length;
+  const pct   = Math.round((score/questions.length)*100);
+
+  const nameParts = studentName.split(' ');
+  const nombre   = nameParts[0] || '';
+  const apellido = nameParts.slice(1).join(' ') || '';
+
+  // BOM para compatibilidad Excel con caracteres especiales
+  let csv = '\uFEFF';
+
+  // ── ENCABEZADO GENERAL ──
+  csv += 'QUIZ ARDUINO - CONCEPTOS BÁSICOS\n';
+  csv += `Alumno,${studentName}\n`;
+  csv += `Nombre,${nombre}\n`;
+  csv += `Apellido,${apellido}\n`;
+  csv += `Email,${studentEmail}\n`;
+  csv += `Curso,${studentCurso}\n`;
+  csv += `División,${studentDivision}\n`;
+  csv += `Fecha,${fecha}\n`;
+  csv += `Hora,${hora}\n`;
+  csv += `Puntaje,${score} / ${questions.length}\n`;
+  csv += `Porcentaje,${pct}%\n`;
+  csv += '\n';
+
+  // ── DETALLE POR PREGUNTA ──
+  csv += 'N°,Pregunta,Respuesta seleccionada,Opción correcta,Resultado\n';
+  questions.forEach((q, qi) => {
+    const ok         = answered[qi] === q.correct;
+    const qText      = q.q.replace(/<[^>]+>/g,'').replace(/,/g,';');
+    const userOpt    = `${KEYS[answered[qi]]} - ${q.opts[answered[qi]].replace(/,/g,';')}`;
+    const correctOpt = `${KEYS[q.correct]} - ${q.opts[q.correct].replace(/,/g,';')}`;
+    const result     = ok ? 'Correcto' : 'Incorrecto';
+    csv += `${qi+1},"${qText}","${userOpt}","${correctOpt}",${result}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `quiz_arduino_${apellido}_${nombre}_${studentCurso}${studentDivision}_${fecha.replace(/\//g,'-')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── REINTENTAR ──
+function retryQuiz() {
+  answered  = new Array(questions.length).fill(null);
+  submitted = false;
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressLabel').textContent = '0 / 10 respondidas';
+  buildQuiz();
+  document.getElementById('btnSubmit').disabled = true;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
